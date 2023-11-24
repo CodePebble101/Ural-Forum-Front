@@ -1,7 +1,7 @@
 <template>
   <div class="video-container">
     <div v-if="!showModalVideo" class="center-button">
-      <button class="orange-button" @click="startTest">Начать тест</button>
+      <button class="orange-button" @click="startTest">Начать игру</button>
     </div>
     <div class="video-frame" v-show="showModalVideo">
       <div>
@@ -28,9 +28,13 @@
             
           </div>
         </div>
-        <div v-if="showResult" class="result-container" >
-            <p>Ваш выбор: {{ userChoice }}</p>
+        <div v-if="showResult && isCorrect"  class="result-container1" >
             <p>{{ resultMessage }}</p>
+            <button class="orange-button" @click="playVideo">Продолжить</button>
+        </div>
+        <div v-if="showResult && !isCorrect" class="result-container2" >
+            <p>{{ resultMessage }}</p>
+            <button class="orange-button" @click="playVideo">Продолжить</button>
         </div>
       </div>
     </div>
@@ -43,20 +47,16 @@
   export default {
     data() {
       return {
-        videos: [
-        'http://localhost:10090/ural/api/v1/streaming/video/1',
-        'http://localhost:10090/ural/api/v1/streaming/video/1', // Путь к другому видео
-        ],
         currentQuestionId: 0,
         question: null, 
-        currentVideoIndex: 0,
+        currentVideoIndex: 1,
         currentAnswer: null,
-        currentAnswerId: null,
+        currentAnswerId: 0,
         showModalVideo: false,
         showModalBut: false,
         userChoice: null,
-        showOptions: false,
         showResult: false,
+        isCorrect: null,
         resultMessage: ''
       };
     },
@@ -69,21 +69,16 @@
     },
       selectOption(option) {
         this.userChoice = option;
-        this.showOptions = false;
-        this.currentVideoIndex++;
-        console.log(this.currentVideoIndex);
-        this.playVideo();
+        this.checkResult();        
     },
-    playVideo() {
+      playVideo() {
+        this.showResult = false;
+        this.fetchQuestion();
         this.unblurVideo();
         const video = this.$refs.videoPlayer;
-        video.src = this.videos[this.currentVideoIndex];
+        video.src = 'http://localhost:10090/ural/api/v1/streaming/video/'+ this.currentVideoIndex;
         video.load();
         video.play();
-      },
-      playNextVideo() {
-        // При окончании текущего видео запускаем следующее
-        this.playVideo();
       },
       async checkResult() {
         try {
@@ -95,12 +90,14 @@
               response.json().then(info => {
                 this.currentAnswer = info.data;
                 this.currentAnswerId = this.currentAnswer.id;
+                this.currentVideoIndex = this.currentAnswer.next_video_id;
+                this.isCorrect = this.currentAnswer.correct;
                 this.resultMessage = this.currentAnswer.message;
+                this.showResult = true;
               });
             } 
           })
           // здесь можно что-то сделать с полученным вопросом, например, вывести в консоль
-          console.log(this.question);
         } catch (error) {
           console.error('Ошибка при загрузке вопроса:', error);
         }
@@ -108,22 +105,16 @@
       },
       blurVideo() {
         const video = this.$refs.videoPlayer;
-        video.style.filter = 'blur(5px)'; // применение эффекта размытия
-        console.log(this.currentVideoIndex);
-        if (this.currentVideoIndex == 1){
-          this.checkResult();
-          this.showResult = true;        
-        }
+        video.style.filter = 'blur(5px)'; // применение эффекта размытия   
         this.showModalBut = true;
       },
       skipVideo() {
-        const video = this.$refs.videoPlayer;
-        video.currentTime = video.duration; // перематываем видео в конец 
+        this.blurVideo();
+        video.muted = true; // перематываем видео в конец 
       },
-      async fetchQuestion() {
-      
+        fetchQuestion() {
         try {
-          await fetch('http://localhost:10090/ural/api/v1/qa/question/' + this.currentQuestionId, {
+          fetch('http://localhost:10090/ural/api/v1/qa/question/' + this.currentAnswerId, {
           method: 'GET'
         })
           .then(response => {
@@ -131,6 +122,7 @@
               response.json().then(info => {
                 this.question = info.data;
                 this.currentQuestionId = this.question.id;
+                console.log(this.currentQuestionId);
               });
             } 
           })
@@ -148,9 +140,7 @@
     },
     mounted() {
       this.fetchQuestion();
-      const video = this.$refs.videoPlayer;
-      video.src = 'http://localhost:10090/ural/api/v1/streaming/video/1'; // путь к вашему видеофайлу
-      video.load();
+      this.playVideo();
     },
   };
   
@@ -193,7 +183,7 @@
     width: 75%; /* Задаем ширину видео на 75% экрана */
     border-radius: 15px;
     overflow: hidden;
-    background-color: blue; /* Цвет рамочки */
+    background-color: (#60B49A); /* Цвет рамочки */
     max-width: 1200px; /* Максимальная ширина видео, если нужно */
     max-height: 800px; /* Максимальная высота видео, если нужно */
     margin: auto; /* Центрируем по горизонтали */
@@ -223,8 +213,18 @@
     cursor: pointer;
   }
 
-  .result-container {
-    background-color: white;
+  .result-container1 {
+    background-color: rgb(129, 255, 129);
+    max-width: 1200px; /* Максимальная ширина видео, если нужно */
+    max-height: 800px; /* Максимальная высота видео, если нужно */
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  .result-container2 {
+    background-color: rgb(250, 72, 72);
+    max-width: 1200px; /* Максимальная ширина видео, если нужно */
+    max-height: 800px; /* Максимальная высота видео, если нужно */
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
