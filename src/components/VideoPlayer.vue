@@ -5,7 +5,7 @@
     </div>
     <div class="video-frame" v-show="showModalVideo">
       <div>
-        <button class="orange-button" @click="skipVideo">Пропустить видео</button>
+        <button  class="orange-button" @click="skipVideo">Пропустить видео</button>
       </div>
       <video ref="videoPlayer" controls autoplay muted @ended="blurVideo">
         Your browser does not support the video tag.
@@ -29,11 +29,13 @@
           </div>
         </div>
         <div v-if="showResult && isCorrect"  class="result-container1" >
-            <p>{{ resultMessage }}</p>
+          <p v-if="!resultMessage">Ты молодец!</p>   
+          <p>{{ resultMessage}}</p>
             <button class="orange-button" @click="playVideo">Продолжить</button>
         </div>
         <div v-if="showResult && !isCorrect" class="result-container2" >
-            <p>{{ resultMessage }}</p>
+          <p v-if="!resultMessage">Допущена ошибка(</p>  
+          <p>{{ resultMessage }}</p>
             <button class="orange-button" @click="playVideo">Продолжить</button>
         </div>
       </div>
@@ -76,6 +78,7 @@
         this.fetchQuestion();
         this.unblurVideo();
         const video = this.$refs.videoPlayer;
+        video.muted = false;
         video.src = 'http://localhost:10090/ural/api/v1/streaming/video/'+ this.currentVideoIndex;
         video.load();
         video.play();
@@ -110,6 +113,7 @@
       },
       skipVideo() {
         this.blurVideo();
+        const video = this.$refs.videoPlayer;
         video.muted = true; // перематываем видео в конец 
       },
         fetchQuestion() {
@@ -230,9 +234,9 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
 
-  /* video::-webkit-media-controls {
+  video::-webkit-media-controls {
     display: none;
-  } */
+  }
   
   /* Эффект размытия в конце видео */
   .video-container video:ended {
