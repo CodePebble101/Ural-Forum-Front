@@ -1,7 +1,8 @@
 <template>
   <div class="video-container">
     <p v-if="start" class="name">
-      <font size="10">CyberKidz Academy: Приключения в киберпространстве</font></p>
+      <font size="10">CyberKidz Academy: Приключения в киберпространстве</font>
+    </p>
     <div v-if="!showModalVideo" class="center-button">
       <button class="orange-button_start" @click="startTest">Начать игру</button>
     </div>
